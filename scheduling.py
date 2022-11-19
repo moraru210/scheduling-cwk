@@ -2,38 +2,52 @@ import json
 import collections
 import heapq
 
-def calculate_total_sum():
-   sum = float(0)
-   for task in node_set:
-      type = task.split("_")[0]
-      sum += processing_times[type]
-   return sum
+class ProcessingFunctions():
+   processing_times = {"vii": 20.0788, "blur": 5.9768, "night": 23.5906, "onnx": 3.3892, "emboss": 2.2084, "muse": 15.7553, "wave": 11.7784}
+   
+   def get_function_time(self, task):
+      return self.processing_times[task]
+
+   def get_task_time(self, task):
+      return self.get_function_time(task.split('_')[0])
+   
+   def sum_task_time(self, task_set):
+      return sum([self.get_task_time(task) for task in task_set])
 
 
-def schedule():
-   total_sum = calculate_total_sum()
-   print(f"total sum: {total_sum}")
-   min_heap = [(0, total_sum, ["start"])]
-   prev_solution = (0, ["start"])
-   iterations = 0
-   while min_heap and iterations <= 4000:
-      lower_bound, sum_so_far, functions_called = heapq.heappop(min_heap)
-      prev_solution = (lower_bound, functions_called)
-      possible_paths = adj_list[functions_called[-1]]
-      for path in possible_paths:
-         path_func = path.split("_")[0]
-         new_called = functions_called + [path]
-         new_lower_bound = lower_bound + max(0, sum_so_far - due_dates[path])
-         heapq.heappush(min_heap, (new_lower_bound, sum_so_far - processing_times[path_func], new_called))
-      iterations += 1
 
-   #either we found full solution, or we have to fill in the rest
-   #we can fill in the rest according to remainder functions due dates
-   print(f"iterations {iterations}")
-   if min_heap:
-      return heapq.heappop(min_heap)
-   else:
-      return prev_solution
+class Schedule():
+   def __init__(self, task_set, max_iterations=4000) -> None:
+      self.node_set = task_set
+      self.max_iterations=max_iterations
+   
+   def sum_task_time(self):
+      return ProcessingFunctions().sum_task_time(self.node_set)
+
+   def schedule(self):
+      total_sum = self.sum_task_time()
+
+      print(f"total sum: {total_sum}")
+      min_heap = [(0, total_sum, ["start"])]
+      prev_solution = (0, ["start"])
+      iterations = 0
+      while min_heap and iterations <= self.max_iterations:
+         lower_bound, sum_so_far, functions_called = heapq.heappop(min_heap)
+         prev_solution = (lower_bound, functions_called)
+         possible_paths = adj_list[functions_called[-1]]
+         for path in possible_paths:
+            new_called = functions_called + [path]
+            new_lower_bound = lower_bound + max(0, sum_so_far - due_dates[path])
+            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called))
+         iterations += 1
+
+      #either we found full solution, or we have to fill in the rest
+      #we can fill in the rest according to remainder functions due dates
+      print(f"iterations {iterations}")
+      if min_heap:
+         return heapq.heappop(min_heap)
+      else:
+         return prev_solution
 
 # def load_graph(N):
 #    G = [[0 for _ in range(1)] for _ in range(N)]
@@ -75,11 +89,8 @@ def schedule():
    # G[29,28]=1
 
 
-
-
+    
 if __name__ == "__main__":
-   processing_times = {"vii": 20.0788, "blur": 5.9768, "night": 23.5906, "onnx": 3.3892, "emboss": 2.2084, "muse": 15.7553, "wave": 11.7784}
-   
    f = open('input.json')
    input_data = json.load(f)
 
@@ -93,5 +104,5 @@ if __name__ == "__main__":
 
    due_dates = input_data["workflow_0"]["due_dates"]
 
-   optimal_schedule = schedule()
+   optimal_schedule = Schedule(node_set).schedule()
    print(optimal_schedule)
