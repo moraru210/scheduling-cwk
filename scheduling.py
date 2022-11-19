@@ -17,7 +17,7 @@ class ProcessingFunctions():
 
 
 class Schedule():
-   def __init__(self, task_set, max_iterations=4000) -> None:
+   def __init__(self, task_set, max_iterations=30000) -> None:
       self.node_set = task_set
       self.max_iterations=max_iterations
    
@@ -28,17 +28,19 @@ class Schedule():
       total_sum = self.sum_task_time()
 
       print(f"total sum: {total_sum}")
-      min_heap = [(0, total_sum, ["start"])]
+      min_heap = [(0, total_sum, ["start"], [])]
       prev_solution = (0, ["start"])
       iterations = 0
       while min_heap and iterations <= self.max_iterations:
-         lower_bound, sum_so_far, functions_called = heapq.heappop(min_heap)
+         lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          prev_solution = (lower_bound, functions_called)
-         possible_paths = adj_list[functions_called[-1]]
+
+         possible_paths = possible_paths + adj_list[functions_called[-1]]
+         print(iterations, possible_paths)
          for path in possible_paths:
             new_called = functions_called + [path]
             new_lower_bound = lower_bound + max(0, sum_so_far - due_dates[path])
-            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called))
+            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called, list(filter(lambda v: v is not path, possible_paths))))
          iterations += 1
 
       #either we found full solution, or we have to fill in the rest
