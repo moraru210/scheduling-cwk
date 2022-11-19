@@ -14,15 +14,43 @@ class ProcessingFunctions():
    def sum_task_time(self, task_set):
       return sum([self.get_task_time(task) for task in task_set])
 
+class Workflow(): 
+   EDGE_SET = 'edge_set'
+   START = 'start'
+
+   def __init__(self, input_file='input.json', start='emboss_8', workflow='workflow_0') -> None:
+      with open(input_file) as f:
+         input_data = json.load(f)
+         adj_list = collections.defaultdict(list)
+         adj_list[self.START] = [start]
+         node_set = set()
+         for edge in input_data[workflow][self.EDGE_SET]:
+            adj_list[edge[0]].append(edge[1])
+            node_set.add(edge[0])
+            node_set.add(edge[1])
+         
+         self.adj_list = adj_list
+         self.node_set = node_set
+         self.due_dates = input_data[workflow]["due_dates"]
+         f.close()
+   
+   def get_adjacency_list(self):
+      return self.adj_list
+   
+   def get_node_set(self):
+      return self.node_set
+
+   def get_due_dates(self):
+      return self.due_dates
 
 
 class Schedule():
-   def __init__(self, task_set, max_iterations=30000) -> None:
-      self.node_set = task_set
+   def __init__(self, workflow: Workflow, max_iterations: int=4000) -> None:
+      self.workflow = workflow
       self.max_iterations=max_iterations
-   
+
    def sum_task_time(self):
-      return ProcessingFunctions().sum_task_time(self.node_set)
+      return ProcessingFunctions().sum_task_time(self.workflow.get_node_set())
 
    def schedule(self):
       total_sum = self.sum_task_time()
@@ -35,11 +63,11 @@ class Schedule():
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          prev_solution = (lower_bound, functions_called)
 
-         possible_paths = possible_paths + adj_list[functions_called[-1]]
+         possible_paths = possible_paths + self.workflow.get_adjacency_list()[functions_called[-1]]
          print(iterations, possible_paths)
          for path in possible_paths:
             new_called = functions_called + [path]
-            new_lower_bound = lower_bound + max(0, sum_so_far - due_dates[path])
+            new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
             heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called, list(filter(lambda v: v is not path, possible_paths))))
          iterations += 1
 
@@ -50,6 +78,15 @@ class Schedule():
          return heapq.heappop(min_heap)
       else:
          return prev_solution
+
+if __name__ == "__main__":
+   workflow = Workflow()
+   optimal_schedule = Schedule(workflow).schedule()
+   print(optimal_schedule)
+
+
+
+
 
 # def load_graph(N):
 #    G = [[0 for _ in range(1)] for _ in range(N)]
@@ -89,22 +126,3 @@ class Schedule():
    # G[29,22]=1
    # G[29,26]=1
    # G[29,28]=1
-
-
-    
-if __name__ == "__main__":
-   f = open('input.json')
-   input_data = json.load(f)
-
-   adj_list = collections.defaultdict(list)
-   adj_list["start"] = ["emboss_8"]
-   node_set = set()
-   for edge in input_data["workflow_0"]["edge_set"]:
-      adj_list[edge[0]].append(edge[1])
-      node_set.add(edge[0])
-      node_set.add(edge[1])
-
-   due_dates = input_data["workflow_0"]["due_dates"]
-
-   optimal_schedule = Schedule(node_set).schedule()
-   print(optimal_schedule)
