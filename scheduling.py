@@ -57,8 +57,19 @@ class Workflow():
    def get_new_tasks(self, completed_tasks):
       recently_completed_task = completed_tasks[0]
       dependencies = self.get_dependency_map()[recently_completed_task]
-      # print('Task', recently_completed_task, 'enabled', dependencies)
-      return dependencies
+      new_tasks = []
+      for task in dependencies:
+         causation_tasks = self.get_causation_map()[task]
+         causations_met = True
+         for causation in causation_tasks:
+            if causation not in completed_tasks:
+               print('Dependency:', causation, 'not met for task:', task)
+               causations_met = False
+               break
+         if causations_met:
+            new_tasks.append(task)
+      print('Task', recently_completed_task, 'enabled', new_tasks)
+      return new_tasks
    
    def get_causation_map(self):
       return self.causation_map
@@ -113,9 +124,23 @@ class Schedule():
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
-         return self.complete(functions_called, possible_paths)
+         complete_schedule = self.complete(functions_called, possible_paths)
+         self.get_total_tardiness(complete_schedule)
+         return complete_schedule
       else:
          return lowest_solution
+
+   def get_total_tardiness(self, schedule):
+      total_tardiness = 0
+      total_processing = 0
+      for function in schedule[:-1]:
+         total_processing += ProcessingFunctions().get_task_time(function)
+         tardiness = max(0, total_processing - self.workflow.get_due_dates()[function])
+         total_tardiness += tardiness
+      print(f"Total Processing of Complete Schedule: {total_processing}")
+      print(f"Total Tardiness of Complete Schedule: {total_tardiness}")
+      return total_tardiness
+
 
    def complete(self, functions, possible):
       print(f"Before Completing {functions}")
