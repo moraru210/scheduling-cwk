@@ -21,22 +21,62 @@ class Workflow():
    def __init__(self, input_file='input.json', start='emboss_8', workflow='workflow_0') -> None:
       with open(input_file) as f:
          input_data = json.load(f)
-         adj_list = collections.defaultdict(list)
-         adj_list[self.START] = [start]
+
+         # Maps which tasks (value) require a task (key)
+         causation_map = collections.defaultdict(list)
+         # Maps which tasks (value) is required to begin the task (key)
+         dependency_map = collections.defaultdict(list)
+
+         '''
+         Dependency map is for all intends and purposes and 
+         inverse of the causation map, however is implemented here as 
+         an optimisation 
+         '''
+
+         causation_map[self.START] = [start]
          node_set = set()
          for edge in input_data[workflow][self.EDGE_SET]:
-            adj_list[edge[0]].append(edge[1])
+            causation_map[edge[0]].append(edge[1])
+            dependency_map[edge[1]].append(edge[0])
+            
             node_set.add(edge[0])
             node_set.add(edge[1])
          
-         self.adj_list = adj_list
+         self.causation_map = causation_map
+         self.dependency_map = dependency_map
          self.node_set = node_set
          self.due_dates = input_data[workflow]["due_dates"]
+         print(node_set)
          f.close()
    
-   def get_adjacency_list(self):
-      return self.adj_list
+   '''
+   This function returns the new tasks available given that the last task
+   was just completed
+   '''
+   def get_new_tasks(self, completed_tasks):
+      # The task we just completed is last
+      recently_completed_task = completed_tasks[-1]
+      affected_tasks = self.get_causation_map()[recently_completed_task]
+      new_tasks = []
+      for task in affected_tasks:
+         dependencies = self.get_dependency_map()[task]
+         dependencies_met = True
+         for dependency in dependencies:
+            if dependency not in completed_tasks:
+               print('Dependency:', dependency, 'not met for task:', task)
+               dependencies_met = False
+               break
+         if dependencies_met:
+            new_tasks.append(task)
+      print('Task', recently_completed_task, 'enabled', new_tasks)
+      return new_tasks
    
+   def get_causation_map(self):
+      return self.causation_map
+   
+   def get_dependency_map(self):
+      return self.dependency_map
+
    def get_node_set(self):
       return self.node_set
 
@@ -45,7 +85,7 @@ class Workflow():
 
 
 class Schedule():
-   def __init__(self, workflow: Workflow, max_iterations: int=4000) -> None:
+   def __init__(self, workflow: Workflow, max_iterations: int=100000) -> None:
       self.workflow = workflow
       self.max_iterations=max_iterations
 
@@ -63,12 +103,13 @@ class Schedule():
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          prev_solution = (lower_bound, functions_called)
 
-         possible_paths = possible_paths + self.workflow.get_adjacency_list()[functions_called[-1]]
-         print(iterations, possible_paths)
+         possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
          for path in possible_paths:
             new_called = functions_called + [path]
             new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
-            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called, list(filter(lambda v: v is not path, possible_paths))))
+            new_paths = possible_paths.copy()
+            new_paths.remove(path)
+            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(path), new_called, new_paths))
          iterations += 1
 
       #either we found full solution, or we have to fill in the rest
