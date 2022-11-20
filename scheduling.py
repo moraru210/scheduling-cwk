@@ -99,10 +99,14 @@ class Schedule():
       print(f"total sum: {total_sum}")
       min_heap = [(0, total_sum, ["start"], [])]
       lowest_solution = (float("inf"), ["start"])
+      largest_iteration=float("-inf")
+      largest_min_heap_size=float("-inf")
       iterations = 0
       while min_heap and iterations <= self.max_iterations:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          lowest_solution = (lower_bound, functions_called)
+         largest_iteration = max(largest_iteration, len(functions_called))
+         largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
          print(f"Iteration: {iterations}")
          print(f"\tCurrent Lower Bound Score: {lower_bound}")
@@ -121,6 +125,8 @@ class Schedule():
       #either we found full solution, or we have to fill in the rest
       #we can fill in the rest according to remainder functions due dates
       print(f"iterations {iterations}")
+      print(f"largest schedule found {largest_iteration}")
+      print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
