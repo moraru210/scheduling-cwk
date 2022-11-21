@@ -158,10 +158,69 @@ class Schedule():
       print(f"Afrer Completing: {functions}")
       return functions
 
+class Heuristic():
+   def __init__(self, workflow: Workflow) -> None:
+      self.workflow = workflow
+      self.levels = collections.defaultdict(set)
+
+   def generate(self):
+      queue = collections.deque()
+      queue.append(("start",0))
+
+      dependencies = self.workflow.get_dependency_map()
+      seen = set()
+
+      while queue:
+         function, level = queue.popleft()
+         self.levels[level].add(function)
+         seen.add(function)
+         children = dependencies[function]
+         for child in children:
+            all_ahead_caused = True
+            for cause in self.workflow.get_causation_map()[child]:
+               if cause not in seen:
+                  all_ahead_caused = False
+                  break
+
+            if all_ahead_caused: 
+               queue.append((child, level+1))
+      
+      print(f"levels {self.levels}")
+   
+   def schedule(self):
+      functions = []
+      for l in range(0,len(self.levels.keys())):
+         print(f"level {l}")
+         nodes = list(self.levels[l])
+         print(f"nodes {nodes}")
+         nodes.sort(key=lambda x: 0 if x == "start" else self.workflow.get_due_dates()[x])
+         print(f"nodes sorted {nodes}")
+         functions = nodes + functions
+
+      self.get_total_tardiness(functions[:-1])
+      return functions
+
+   def get_total_tardiness(self, schedule):
+      total_tardiness = 0
+      total_processing = 0
+      for function in schedule[:-1]:
+         total_processing += ProcessingFunctions().get_task_time(function)
+         tardiness = max(0, total_processing - self.workflow.get_due_dates()[function])
+         total_tardiness += tardiness
+      print(f"Total Processing of Complete Schedule: {total_processing}")
+      print(f"Total Tardiness of Complete Schedule: {total_tardiness}")
+      return total_tardiness
+
+
+
 
 if __name__ == "__main__":
    workflow = Workflow()
-   start_time = time.perf_counter()
-   optimal_schedule = Schedule(workflow).schedule()
-   print(f"Scheduling took {time.perf_counter() - start_time} seconds")
-   print(f"Schedule found: {optimal_schedule}")
+   # start_time = time.perf_counter()
+   # optimal_schedule = Schedule(workflow).schedule()
+   heuristic = Heuristic(workflow)
+   heuristic.generate()
+   hu_schedule = heuristic.schedule()
+   print(f"Hu's algorithm heuristic {hu_schedule}")
+   # print(f"Scheduling took {time.perf_counter() - start_time} seconds")
+   # print(f"Schedule found: {optimal_schedule}")

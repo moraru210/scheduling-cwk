@@ -1,0 +1,47 @@
+{'blur_3', 'wave_1', 'emboss_8', 'emboss_2', 'onnx_3', 'muse_3', 'wave_4', 'emboss_5', 'blur_5', 'blur_1', 'emboss_6', 'emboss_4', 'onnx_2', 'onnx_4', 'muse_1', 'emboss_7', 'blur_4', 'blur_6', 'wave_3', 'muse_2', 'night_1', 'onnx_6', 'onnx_5', 'vii_2', 'wave_2', 'onnx_1', 'wave_5', 'vii_1', 'blur_2', 'emboss_3', 'emboss_1'}
+levels defaultdict(<class 'set'>, {0: {'start'}, 1: {'muse_3'}, 2: {'onnx_1'}, 3: {'muse_1'}, 4: {'blur_1'}, 5: {'blur_6', 'emboss_4', 'blur_4'}, 6: {'onnx_2', 'night_1', 'blur_5'}, 7: {'muse_2', 'onnx_3', 'wave_2'}, 8: {'onnx_6', 'wave_3', 'emboss_7', 'emboss_3'}, 9: {'wave_4', 'vii_1', 'wave_5'}, 10: {'emboss_6', 'emboss_5', 'blur_2'}, 11: {'onnx_4', 'onnx_5', 'emboss_1', 'wave_1'}, 12: {'emboss_2', 'vii_2', 'blur_3'}, 13: {'emboss_8'}})
+level 0
+nodes ['start']
+nodes sorted ['start']
+level 1
+nodes ['muse_3']
+nodes sorted ['muse_3']
+level 2
+nodes ['onnx_1']
+nodes sorted ['onnx_1']
+level 3
+nodes ['muse_1']
+nodes sorted ['muse_1']
+level 4
+nodes ['blur_1']
+nodes sorted ['blur_1']
+level 5
+nodes ['blur_6', 'emboss_4', 'blur_4']
+nodes sorted ['blur_6', 'blur_4', 'emboss_4']
+level 6
+nodes ['onnx_2', 'night_1', 'blur_5']
+nodes sorted ['night_1', 'onnx_2', 'blur_5']
+level 7
+nodes ['muse_2', 'onnx_3', 'wave_2']
+nodes sorted ['wave_2', 'onnx_3', 'muse_2']
+level 8
+nodes ['onnx_6', 'wave_3', 'emboss_7', 'emboss_3']
+nodes sorted ['emboss_3', 'onnx_6', 'wave_3', 'emboss_7']
+level 9
+nodes ['wave_4', 'vii_1', 'wave_5']
+nodes sorted ['wave_4', 'vii_1', 'wave_5']
+level 10
+nodes ['emboss_6', 'emboss_5', 'blur_2']
+nodes sorted ['emboss_6', 'emboss_5', 'blur_2']
+level 11
+nodes ['onnx_4', 'onnx_5', 'emboss_1', 'wave_1']
+nodes sorted ['emboss_1', 'onnx_4', 'onnx_5', 'wave_1']
+level 12
+nodes ['emboss_2', 'vii_2', 'blur_3']
+nodes sorted ['emboss_2', 'blur_3', 'vii_2']
+level 13
+nodes ['emboss_8']
+nodes sorted ['emboss_8']
+Total Processing of Complete Schedule: 228.01399999999998
+Total Tardiness of Complete Schedule: 589.0202
+Hu's algorithm heuristic ['emboss_8', 'emboss_2', 'blur_3', 'vii_2', 'emboss_1', 'onnx_4', 'onnx_5', 'wave_1', 'emboss_6', 'emboss_5', 'blur_2', 'wave_4', 'vii_1', 'wave_5', 'emboss_3', 'onnx_6', 'wave_3', 'emboss_7', 'wave_2', 'onnx_3', 'muse_2', 'night_1', 'onnx_2', 'blur_5', 'blur_6', 'blur_4', 'emboss_4', 'blur_1', 'muse_1', 'onnx_1', 'muse_3', 'start']
