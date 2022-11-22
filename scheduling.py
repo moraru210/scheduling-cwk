@@ -63,12 +63,12 @@ class Workflow():
          causations_met = True
          for causation in causation_tasks:
             if causation not in completed_tasks:
-               print('Dependency:', causation, 'not met for task:', task)
+               # print('Dependency:', causation, 'not met for task:', task)
                causations_met = False
                break
          if causations_met:
             new_tasks.append(task)
-      print('Task', recently_completed_task, 'enabled', new_tasks)
+      # print('Task', recently_completed_task, 'enabled', new_tasks)
       return new_tasks
    
    def get_causation_map(self):
@@ -111,10 +111,10 @@ class Schedule():
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
-         print(f"Iteration: {iterations}")
-         print(f"\tCurrent Lower Bound Score: {lower_bound}")
-         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
-         print(f"\tCurrent Best End Schedule: {functions_called}")
+         # print(f"Iteration: {iterations}")
+         # print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         # print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         # print(f"\tCurrent Best End Schedule: {functions_called}")
 
          possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
          for path in possible_paths:
@@ -127,9 +127,9 @@ class Schedule():
 
       #either we found full solution, or we have to fill in the rest
       #we can fill in the rest according to remainder functions due dates
-      print(f"iterations {iterations}")
-      print(f"largest schedule found {largest_iteration}")
-      print(f"largest minimum heap size found {largest_min_heap_size}")
+      # print(f"iterations {iterations}")
+      # print(f"largest schedule found {largest_iteration}")
+      # print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
@@ -137,6 +137,7 @@ class Schedule():
          self.get_total_tardiness(complete_schedule)
          return complete_schedule
       else:
+         self.get_total_tardiness(lowest_solution)
          return lowest_solution
 
    def get_total_tardiness(self, schedule):
@@ -152,13 +153,13 @@ class Schedule():
 
 
    def complete(self, functions, possible):
-      print(f"Before Completing {functions}")
+      # print(f"Before Completing {functions}")
       while len(functions) != self.total_num_tasks:
          possible = possible + self.workflow.get_new_tasks(functions)
          get_min_due = min(possible, key=lambda x: self.workflow.due_dates[x])
          functions.insert(0, get_min_due)
          possible.remove(get_min_due)
-      print(f"Afrer Completing: {functions}")
+      # print(f"Afrer Completing: {functions}")
       return functions
 
 
@@ -249,10 +250,10 @@ class ScheduleQ3(Schedule):
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
-         print(f"Iteration: {iterations}")
-         print(f"\tCurrent Lower Bound Score: {lower_bound}")
-         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
-         print(f"\tCurrent Best End Schedule: {functions_called}")
+         # print(f"Iteration: {iterations}")
+         # print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         # print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         # print(f"\tCurrent Best End Schedule: {functions_called}")
 
          possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
          selected_paths = possible_paths.copy()
@@ -272,12 +273,30 @@ class ScheduleQ3(Schedule):
       print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
-         print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
+         # print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
          complete_schedule = self.complete(functions_called, possible_paths)
          self.get_total_tardiness(complete_schedule)
          return complete_schedule
       else:
-         return lowest_solution
+         return lowest_solution[1]
+
+def run_experiment(workflow, selection_method, interval, name):
+   schedule = ScheduleQ3(workflow)
+   percentage = 0
+   results = dict()
+   while percentage <= 100:
+      result = schedule.schedule(selection_method=selection_method, percentage=(percentage/100))
+      tardiness = schedule.get_total_tardiness(result)
+      results[percentage] = tardiness
+      percentage += interval
+   print(f"Experiment results for: {name} and intervals of {interval}%")
+   print(results)
+   f = open("./"+name+".csv",'w')
+   for res in results:
+      f.write(f"{res},{results[res]}\n")
+   f.close()
+
+   return results
 
 if __name__ == "__main__":
    workflow = Workflow()
@@ -291,5 +310,6 @@ if __name__ == "__main__":
 
    # print(f"Scheduling took {time.perf_counter() - start_time} seconds")
    # print(f"Schedule found: {optimal_schedule}")
-   optimal_schedule = ScheduleQ3(workflow).schedule(selection_method=Beam_Width_Reductions().above_average_due_date, percentage=0.85)
+   exp1 = run_experiment(workflow, Beam_Width_Reductions().above_average_due_date, 5, 'above_average_due_date')
+   exp2 = run_experiment(workflow, Beam_Width_Reductions().prioritise_by_high_due_date, 5, 'priority_selection_by_due_date')
    # optimal_schedule = ScheduleQ3(workflow).schedule(selection_method=Beam_Width_Reductions().prioritise_by_high_due_date, percentage=0.95)
