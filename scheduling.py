@@ -82,6 +82,9 @@ class Workflow():
 
    def get_due_dates(self):
       return self.due_dates
+   
+   def get_due_date(self, path):
+      return self.due_dates[path]
 
 
 class Schedule():
@@ -158,6 +161,7 @@ class Schedule():
       print(f"Afrer Completing: {functions}")
       return functions
 
+
 class Heuristic():
    def __init__(self, workflow: Workflow) -> None:
       self.workflow = workflow
@@ -211,16 +215,81 @@ class Heuristic():
       print(f"Total Tardiness of Complete Schedule: {total_tardiness}")
       return total_tardiness
 
+class Beam_Width_Reductions():
+   def above_average_due_date(self, paths_and_due_dates, percentage):
+      average = sum([x[1] for x in paths_and_due_dates]) / len(paths_and_due_dates)
+      return [x[0] for x in filter(lambda x: x[1] >= average * percentage, paths_and_due_dates)]
+   
+   def prioritise_by_high_due_date(self, paths_and_due_dates, percentage):
+      paths_and_due_dates.sort(key=(lambda x: x[1]), reverse=True)
+      paths_and_due_dates = paths_and_due_dates[:max(2, int(percentage * len(paths_and_due_dates)))]
+      return [x[0] for x in paths_and_due_dates]
 
 
+class ScheduleQ3(Schedule):
+   def beam_width_reduction(self, possible_paths, selection_method, percentage):
+      if len(possible_paths) <= 1:
+         return possible_paths
+
+      paths_and_due_dates = [(x, self.workflow.get_due_date(x)) for x in possible_paths]
+      return selection_method(paths_and_due_dates, percentage)
+
+   def schedule(self, selection_method=Beam_Width_Reductions().above_average_due_date, percentage=1.0):
+      total_sum = self.sum_task_time()
+
+      print(f"total sum: {total_sum}")
+      min_heap = [(0, total_sum, ["start"], [])]
+      lowest_solution = (float("inf"), ["start"])
+      largest_iteration=float("-inf")
+      largest_min_heap_size=float("-inf")
+      iterations = 0
+      while min_heap and iterations <= self.max_iterations:
+         lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
+         lowest_solution = (lower_bound, functions_called)
+         largest_iteration = max(largest_iteration, len(functions_called))
+         largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
+         
+         print(f"Iteration: {iterations}")
+         print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         print(f"\tCurrent Best End Schedule: {functions_called}")
+
+         possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
+         selected_paths = possible_paths.copy()
+         selected_paths = self.beam_width_reduction(possible_paths, selection_method, percentage)
+         for path in selected_paths:
+            new_called = [path] + functions_called
+            new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
+            new_paths = possible_paths.copy()
+            new_paths.remove(path)
+            heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(functions_called[0]), new_called, new_paths))
+         iterations += 1
+
+      #either we found full solution, or we have to fill in the rest
+      #we can fill in the rest according to remainder functions due dates
+      print(f"iterations {iterations}")
+      print(f"largest schedule found {largest_iteration}")
+      print(f"largest minimum heap size found {largest_min_heap_size}")
+      if min_heap:
+         lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
+         print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
+         complete_schedule = self.complete(functions_called, possible_paths)
+         self.get_total_tardiness(complete_schedule)
+         return complete_schedule
+      else:
+         return lowest_solution
 
 if __name__ == "__main__":
    workflow = Workflow()
    # start_time = time.perf_counter()
    # optimal_schedule = Schedule(workflow).schedule()
-   heuristic = Heuristic(workflow)
-   heuristic.generate()
-   hu_schedule = heuristic.schedule()
-   print(f"Hu's algorithm heuristic {hu_schedule}")
+
+   # heuristic = Heuristic(workflow)
+   # heuristic.generate()
+   # hu_schedule = heuristic.schedule()
+   # print(f"Hu's algorithm heuristic {hu_schedule}")
+
    # print(f"Scheduling took {time.perf_counter() - start_time} seconds")
    # print(f"Schedule found: {optimal_schedule}")
+   optimal_schedule = ScheduleQ3(workflow).schedule(selection_method=Beam_Width_Reductions().above_average_due_date, percentage=0.85)
+   # optimal_schedule = ScheduleQ3(workflow).schedule(selection_method=Beam_Width_Reductions().prioritise_by_high_due_date, percentage=0.95)
