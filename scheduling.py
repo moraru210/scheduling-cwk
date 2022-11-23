@@ -380,24 +380,35 @@ def run_experiment(workflow, selection_method, interval, name):
 if __name__ == "__main__":
    workflow = Workflow()
    start_time = time.perf_counter()
-
+   
+   # --UNCOMMENT BELOW TO RUN Q2 + Fathoming --
    # Schedule for Question 2 - Works well with fathoming
-   optimal_schedule = Schedule(workflow).schedule()
+   # optimal_schedule = Schedule(workflow).schedule()
+   # print(f"Schedule found: {optimal_schedule}")
+   # -- END BLOCK --
 
+   # --UNCOMMENT BELOW TO RUN Hu's Heuristic --
    # heuristic = Heuristic(workflow)
    # heuristic.generate()
    # hu_schedule = heuristic.schedule()
    # print(f"Hu's algorithm heuristic {hu_schedule}")
+   # -- END BLOCK --
 
-   # print(f"Scheduling took {time.perf_counter() - start_time} seconds")
-   # print(f"Schedule found: {optimal_schedule}")
+
+   # --UNCOMMENT BELOW TO RUN EXPERIMENTS FOR BEAM SEARCH OPTIMISATIONS--
    # exp1 = run_experiment(workflow, Beam_Width_Reductions().above_average_due_date, 5, 'above_average_due_date')
    # exp2 = run_experiment(workflow, Beam_Width_Reductions().prioritise_by_high_due_date, 5, 'priority_selection_by_due_date')
+   # -- END BLOCK --
    
    # Schedule that uses a hybrid two-step dfs process - Works with fathoming
+   # --UNCOMMENT BELOW TO RUN SCHEDULE FOR HYBRID TWO STEP DFS WITH FATHOMING --
    # optimal_schedule = ScheduleTwoStep(workflow).schedule(percentage=0.75)
-   print(f"Scheduling took {time.perf_counter() - start_time} seconds")
+   # print(f"optimal = {optimal_schedule}")
+   # -- END BLOCK --
+
+   # --UNCOMMENT BELOW TO GENERATE OUR BEST SCHEDULE WITH BEAM SEARCH using  above_average_due_date at 57% selection --
+   optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().above_average_due_date, 0.57)
+   print(optimal_schedule)
+   # -- END BLOCK --
    
-   # Schedule for Question 3 - TODO: Does not work with fathoming?
-   # optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().prioritise_by_high_due_date, 0.5)
-   print(f"optimal schedule found = {optimal_schedule}")
+   print(f"Scheduling took {time.perf_counter() - start_time} seconds")
