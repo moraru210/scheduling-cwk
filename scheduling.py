@@ -383,8 +383,8 @@ if __name__ == "__main__":
    
    # --UNCOMMENT BELOW TO RUN Q2 + Fathoming --
    # Schedule for Question 2 - Works well with fathoming
-   # optimal_schedule = Schedule(workflow).schedule()
-   # print(f"Schedule found: {optimal_schedule}")
+   optimal_schedule = Schedule(workflow).schedule()
+   print(f"Schedule found: {optimal_schedule}")
    # -- END BLOCK --
 
    # --UNCOMMENT BELOW TO RUN Hu's Heuristic --
@@ -404,6 +404,11 @@ if __name__ == "__main__":
    # --UNCOMMENT BELOW TO RUN SCHEDULE FOR HYBRID TWO STEP DFS WITH FATHOMING --
    # optimal_schedule = ScheduleTwoStep(workflow).schedule(percentage=0.75)
    # print(f"optimal = {optimal_schedule}")
+   # -- END BLOCK --
+
+   # --UNCOMMENT BELOW TO GENERATEE THE SCHEDULE WITH BEAM SEARCH using  prioritise_by_high_due_date at 90% selection --
+   # optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().prioritise_by_high_due_date, 0.90)
+   # print(optimal_schedule)
    # -- END BLOCK --
 
    # --UNCOMMENT BELOW TO GENERATE OUR BEST SCHEDULE WITH BEAM SEARCH using  above_average_due_date at 57% selection --
