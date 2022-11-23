@@ -379,10 +379,10 @@ def run_experiment(workflow, selection_method, interval, name):
 
 if __name__ == "__main__":
    workflow = Workflow()
-   # start_time = time.perf_counter()
+   start_time = time.perf_counter()
 
    # Schedule for Question 2 - Works well with fathoming
-   # optimal_schedule = Schedule(workflow).schedule()
+   optimal_schedule = Schedule(workflow).schedule()
 
    # heuristic = Heuristic(workflow)
    # heuristic.generate()
@@ -395,7 +395,8 @@ if __name__ == "__main__":
    # exp2 = run_experiment(workflow, Beam_Width_Reductions().prioritise_by_high_due_date, 5, 'priority_selection_by_due_date')
    
    # Schedule that uses a hybrid two-step dfs process - Works with fathoming
-   optimal_schedule = ScheduleTwoStep(workflow).schedule(percentage=0.75)
+   # optimal_schedule = ScheduleTwoStep(workflow).schedule(percentage=0.75)
+   print(f"Scheduling took {time.perf_counter() - start_time} seconds")
    
    # Schedule for Question 3 - TODO: Does not work with fathoming?
    # optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().prioritise_by_high_due_date, 0.5)
