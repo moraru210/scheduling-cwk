@@ -110,10 +110,10 @@ class Schedule():
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
-         # print(f"Iteration: {iterations}")
-         # print(f"\tCurrent Lower Bound Score: {lower_bound}")
-         # print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
-         # print(f"\tCurrent Best End Schedule: {functions_called}")
+         print(f"Iteration: {iterations}")
+         print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         print(f"\tCurrent Best End Schedule: {functions_called}")
 
          possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
          for path in possible_paths:
@@ -130,9 +130,8 @@ class Schedule():
 
       #either we found full solution, or we have to fill in the rest
       #we can fill in the rest according to remainder functions due dates
-      # print(f"iterations {iterations}")
-      # print(f"largest schedule found {largest_iteration}")
-      # print(f"largest minimum heap size found {largest_min_heap_size}")
+      print(f"largest schedule found {largest_iteration}")
+      print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
          print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
@@ -252,10 +251,10 @@ class ScheduleQ3(Schedule):
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
-         # print(f"Iteration: {iterations}")
-         # print(f"\tCurrent Lower Bound Score: {lower_bound}")
-         # print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
-         # print(f"\tCurrent Best End Schedule: {functions_called}")
+         print(f"Iteration: {iterations}")
+         print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         print(f"\tCurrent Best End Schedule: {functions_called}")
 
          possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
          selected_paths = possible_paths.copy()
@@ -274,7 +273,6 @@ class ScheduleQ3(Schedule):
 
       #either we found full solution, or we have to fill in the rest
       #we can fill in the rest according to remainder functions due dates
-      print(f"iterations {iterations}")
       print(f"largest schedule found {largest_iteration}")
       print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
@@ -348,12 +346,11 @@ class ScheduleTwoStep(Schedule):
 
       #either we found full solution, or we have to fill in the rest
       #we can fill in the rest according to remainder functions due dates
-      print(f"iterations {iterations}")
       print(f"largest schedule found {largest_iteration}")
       print(f"largest minimum heap size found {largest_min_heap_size}")
       if min_heap:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
-         print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
+         print(f"Most lower bound solution found from heap: {functions_called} with lower bound score {lower_bound}")
          complete_schedule = self.complete(functions_called, possible_paths)
          self.get_total_tardiness(complete_schedule)
          return complete_schedule
@@ -402,4 +399,4 @@ if __name__ == "__main__":
    
    # Schedule for Question 3 - TODO: Does not work with fathoming?
    # optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().prioritise_by_high_due_date, 0.5)
-   print(f"optimal = {optimal_schedule}")
+   print(f"optimal schedule found = {optimal_schedule}")
