@@ -107,7 +107,6 @@ class Schedule():
       iterations = 0
       while min_heap and iterations <= self.max_iterations:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
-         lowest_solution = (lower_bound, functions_called)
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
@@ -122,6 +121,10 @@ class Schedule():
             new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
             new_paths = possible_paths.copy()
             new_paths.remove(path)
+            if len(new_called) == 32 and new_lower_bound < lowest_solution[0]:
+               lowest_solution = (new_lower_bound, new_called)
+            elif new_lower_bound > lowest_solution[0]:
+               continue #fathoming
             heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(functions_called[0]), new_called, new_paths))
          iterations += 1
 
@@ -137,7 +140,7 @@ class Schedule():
          self.get_total_tardiness(complete_schedule)
          return complete_schedule
       else:
-         self.get_total_tardiness(lowest_solution)
+         self.get_total_tardiness(lowest_solution[1])
          return lowest_solution
 
    def get_total_tardiness(self, schedule):
@@ -202,7 +205,7 @@ class Heuristic():
          print(f"nodes sorted {nodes}")
          functions = nodes + functions
 
-      self.get_total_tardiness(functions[:-1])
+      self.get_total_tardiness(functions)
       return functions
 
    def get_total_tardiness(self, schedule):
@@ -246,7 +249,6 @@ class ScheduleQ3(Schedule):
       iterations = 0
       while min_heap and iterations <= self.max_iterations:
          lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
-         lowest_solution = (lower_bound, functions_called)
          largest_iteration = max(largest_iteration, len(functions_called))
          largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
          
@@ -263,6 +265,10 @@ class ScheduleQ3(Schedule):
             new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
             new_paths = possible_paths.copy()
             new_paths.remove(path)
+            # if len(new_called) == 32 and new_lower_bound < lowest_solution[0]:
+            #    lowest_solution = (new_lower_bound, new_called)
+            # elif new_lower_bound > lowest_solution[0]:
+            #    continue #fathoming
             heapq.heappush(min_heap, (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(functions_called[0]), new_called, new_paths))
          iterations += 1
 
@@ -279,6 +285,82 @@ class ScheduleQ3(Schedule):
          return complete_schedule
       else:
          return lowest_solution[1]
+
+class ScheduleTwoStep(Schedule):
+   def beam_width_reduction(self, possible_paths, selection_method, percentage):
+      if len(possible_paths) <= 1:
+         return possible_paths
+
+      paths_and_due_dates = [(x, self.workflow.get_due_date(x)) for x in possible_paths]
+      return selection_method(paths_and_due_dates, percentage)
+
+   def explore_paths(self, paths, possible_paths, lower_bound, sum_so_far, functions_called, heap, lowest):
+      for path in paths:
+            new_called = [path] + functions_called
+            new_lower_bound = lower_bound + max(0, sum_so_far - self.workflow.get_due_dates()[path])
+            new_paths = possible_paths.copy()
+            new_paths.remove(path)
+            if len(new_called) == 32 and new_lower_bound < lowest[0]:
+               lowest = (new_lower_bound, new_called, new_paths)
+            elif new_lower_bound > lowest[0]:
+               return #fathoming
+            possibility = (new_lower_bound, sum_so_far - ProcessingFunctions().get_task_time(functions_called[0]), new_called, new_paths)
+            heapq.heappush(heap, possibility)
+
+   def schedule(self, selection_method=Beam_Width_Reductions().above_average_due_date, percentage=1.0):
+      total_sum = self.sum_task_time()
+
+      print(f"total sum: {total_sum}")
+      min_heap = [(0, total_sum, ["start"], [])]
+      lowest_solution = (float("inf"), ["start"])
+      largest_iteration=float("-inf")
+      largest_min_heap_size=float("-inf")
+      iterations = 0
+      while min_heap and iterations <= self.max_iterations:
+         lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
+         largest_iteration = max(largest_iteration, len(functions_called))
+         largest_min_heap_size=max(largest_min_heap_size, len(min_heap))
+         
+         print(f"Iteration: {iterations}")
+         print(f"\tCurrent Lower Bound Score: {lower_bound}")
+         print(f"\tEnd Time of Current Iteration Node {functions_called[0]} is {sum_so_far}")
+         print(f"\tCurrent Best End Schedule: {functions_called}")
+
+         to_explore = self.workflow.get_new_tasks(functions_called)
+         possible_paths = possible_paths + to_explore
+         
+         if to_explore:
+            two_step_heap = []
+            self.explore_paths(to_explore, possible_paths, lower_bound, sum_so_far, functions_called, two_step_heap, lowest_solution)
+            lowest_child = heapq.heappop(two_step_heap)
+            for two_step in two_step_heap:
+               heapq.heappush(min_heap, two_step)
+            lower_bound, sum_so_far, functions_called, possible_paths = lowest_child
+            possible_paths = possible_paths + self.workflow.get_new_tasks(functions_called)
+            to_explore = self.explore_paths(possible_paths, possible_paths, lower_bound, sum_so_far, functions_called, min_heap, lowest_solution)
+            iterations += 1
+         else:
+            selected = possible_paths.copy()
+            selected = self.beam_width_reduction(possible_paths, selection_method, percentage)
+            self.explore_paths(selected, possible_paths, lower_bound, sum_so_far, functions_called, min_heap, lowest_solution)
+         
+         iterations += 1
+
+      #either we found full solution, or we have to fill in the rest
+      #we can fill in the rest according to remainder functions due dates
+      print(f"iterations {iterations}")
+      print(f"largest schedule found {largest_iteration}")
+      print(f"largest minimum heap size found {largest_min_heap_size}")
+      if min_heap:
+         lower_bound, sum_so_far, functions_called, possible_paths = heapq.heappop(min_heap)
+         print(f"most lower bound solution found {functions_called} with lower bound score {lower_bound}")
+         complete_schedule = self.complete(functions_called, possible_paths)
+         self.get_total_tardiness(complete_schedule)
+         return complete_schedule
+      else:
+         return lowest_solution
+
+
 
 def run_experiment(workflow, selection_method, interval, name):
    schedule = ScheduleQ3(workflow)
@@ -301,6 +383,8 @@ def run_experiment(workflow, selection_method, interval, name):
 if __name__ == "__main__":
    workflow = Workflow()
    # start_time = time.perf_counter()
+
+   # Schedule for Question 2 - Works well with fathoming
    # optimal_schedule = Schedule(workflow).schedule()
 
    # heuristic = Heuristic(workflow)
@@ -310,6 +394,12 @@ if __name__ == "__main__":
 
    # print(f"Scheduling took {time.perf_counter() - start_time} seconds")
    # print(f"Schedule found: {optimal_schedule}")
-   exp1 = run_experiment(workflow, Beam_Width_Reductions().above_average_due_date, 5, 'above_average_due_date')
-   exp2 = run_experiment(workflow, Beam_Width_Reductions().prioritise_by_high_due_date, 5, 'priority_selection_by_due_date')
-   # optimal_schedule = ScheduleQ3(workflow).schedule(selection_method=Beam_Width_Reductions().prioritise_by_high_due_date, percentage=0.95)
+   # exp1 = run_experiment(workflow, Beam_Width_Reductions().above_average_due_date, 5, 'above_average_due_date')
+   # exp2 = run_experiment(workflow, Beam_Width_Reductions().prioritise_by_high_due_date, 5, 'priority_selection_by_due_date')
+   
+   # Schedule that uses a hybrid two-step dfs process - Works with fathoming
+   optimal_schedule = ScheduleTwoStep(workflow).schedule(percentage=0.75)
+   
+   # Schedule for Question 3 - TODO: Does not work with fathoming?
+   # optimal_schedule = ScheduleQ3(workflow).schedule(Beam_Width_Reductions().prioritise_by_high_due_date, 0.5)
+   print(f"optimal = {optimal_schedule}")
